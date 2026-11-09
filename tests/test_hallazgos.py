@@ -106,3 +106,11 @@ def test_h8_que_paso_muestra_el_motivo_real(res):
     assert obs.loc["1002", "QUÉ PASÓ"] == "FALTA EN SAP IVA"
     assert obs.loc["1004", "QUÉ PASÓ"] == "FACTURA VÁLIDA CON REVERSO IVA - REVISAR"
     assert obs.loc["1005", "QUÉ PASÓ"] == "DIFERENCIA IMPORTE IVA"
+
+
+def test_incompleta_con_monto_cero_no_se_observa(res):
+    """Decisión: una incompleta de total 0 no afecta nada; la de monto > 0 sí se observa."""
+    facturas = set(res.observaciones["FACTURA"])
+    assert "4002" not in facturas and "4001" in facturas
+    net = res.netvalle
+    assert net.loc[net["Nº DE FACTURA"] == 4002, "RESULTADO CONTROL"].iloc[0].startswith("INCOMPLETA")  # sigue en hoja NETVALLE

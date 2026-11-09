@@ -82,3 +82,6 @@ aparece como "No se encontró la contabilización esperada", aunque SAP sí la t
 **Propuesta:** agregar el motivo real al texto de `QUÉ PASÓ` (p. ej. "DUPLICADA EN SAP IT - REVISAR"). No se cambió.
 
 **Aplicado (hallazgo 8):** `QUÉ PASÓ` ahora lleva el resultado exacto (p. ej. `DUPLICADA EN SAP IT - REVISAR`); si hay varios, separados por ` / `.
+
+## Regla añadida con datos reales: incompletas con total 0
+Las facturas INCOMPLETAS con total Bs 0,00 no se observan (no afectan impuestos); siguen visibles en la hoja `NETVALLE`. Con el control real de octubre eran 14 casos que dejaban el resultado en REVISAR sin motivo.

@@ -406,7 +406,10 @@ def generar_control(netvalle_archivo, sap_archivos, archivo_salida=None):
     # CASOS NETVALLE QUE REQUIEREN INVESTIGACIÓN
     # Se agrupan IVA e IT para no contar la misma factura dos veces.
     # ------------------------------------------------------------
-    observables = net.loc[(validas | incompletas_mask) & observaciones_mask].copy()
+    # Incompletas con total 0 no afectan impuestos: no se observan (decisión del usuario).
+    incompletas_con_monto = incompletas_mask & net["_TOTAL"].abs().gt(TOLERANCIA)
+
+    observables = net.loc[(validas | incompletas_con_monto) & observaciones_mask].copy()
 
     casos = {}
 
