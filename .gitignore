@@ -1,0 +1,37 @@
+# Datos reales (nunca al repositorio)
+*.xlsx
+*.xls
+*.csv
+tests/fixtures/*
+!tests/fixtures/.gitkeep
+!tests/fixtures/README.md
+
+# Secretos
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+
+# Node / Next.js
+node_modules/
+web/.next/
+web/out/
+web/coverage/
+
+# Resultados temporales de la API
+api/tmp/
+tmp/
+
+# SO / IDE
+.DS_Store
+.idea/
+.vscode/
