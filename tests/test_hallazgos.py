@@ -96,3 +96,10 @@ def test_h7_encabezados_con_color_por_hoja(archivos_sinteticos, tmp_path):
     for hoja, color in esperado.items():
         for celda in wb[hoja][1]:
             assert celda.fill.fgColor.rgb.endswith(color) and celda.font.b and celda.font.color.rgb.endswith("FFFFFF")
+
+
+def test_h8_que_paso_no_refleja_el_motivo_real(res):
+    obs = res.observaciones.set_index("FACTURA")
+    # 2003 = IT duplicada, 2005 = diferencia de IT: ambas dicen "No se encontró..." aunque SAP sí tiene partidas
+    for factura in ("2003", "2005"):
+        assert obs.loc[factura, "QUÉ PASÓ"] == "No se encontró la contabilización esperada en SAP"
