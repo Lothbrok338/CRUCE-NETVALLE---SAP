@@ -7,6 +7,7 @@ import { TarjetaIndicador } from "@/components/tarjeta-indicador";
 import { buttonVariants } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ErrorApi, obtenerEstado, urlExcel, type EstadoControl } from "@/lib/api";
+import { tonoDeResultado } from "@/lib/estado";
 import { cn } from "@/lib/utils";
 
 export default function Resultado() {
@@ -58,6 +59,8 @@ export default function Resultado() {
   }
 
   const r = e.resumen!;
+  const general = r.tarjetas.find((x) => x.control === "RESULTADO GENERAL");
+  const todoOk = !!general && tonoDeResultado(general.resultado) === "verde";
   return (
     <section className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -69,6 +72,21 @@ export default function Resultado() {
           <a href={urlExcel(id)} className={buttonVariants()} download>Descargar Excel</a>
         </div>
       </div>
+      {general && (
+        <div
+          role="status"
+          data-testid="banner-general"
+          className={cn(
+            "rounded-xl border-l-8 p-5 text-lg font-bold",
+            todoOk ? "border-l-[#548235] bg-[#E2F0D9] text-[#20613C]" : "border-l-[#C00000] bg-[#FCE4D6] text-[#9C0006]",
+          )}
+        >
+          {todoOk
+            ? "✔ TODO OK: no hay observaciones pendientes. El control cuadra."
+            : `⚠ Hay ${r.observaciones_total} observación(es) para revisar antes de dar por bueno el control.`}
+          <p className="mt-1 text-sm font-normal">{general.que_significa}</p>
+        </div>
+      )}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {r.tarjetas.map((t) => <TarjetaIndicador key={t.control} t={t} />)}
       </div>

@@ -1,6 +1,6 @@
 # Despliegue en Railway
 
-Proyecto `CONTROL-TRIBUTARIO-INTEGRAL`, entorno `production`, dos servicios conectados a este repositorio.
+Proyecto `CONTROL-TRIBUTARIO-INTEGRAL`, entorno `production`, dos servicios conectados a este repositorio (rama `main`).
 
 | Servicio | Dockerfile | Público | Health check | Variables |
 |---|---|---|---|---|
@@ -15,8 +15,7 @@ Proyecto `CONTROL-TRIBUTARIO-INTEGRAL`, entorno `production`, dos servicios cone
 - El repositorio es público: nunca subir `.xlsx`, `.env` ni datos reales (`.gitignore` ya los excluye).
 
 ## Rama de despliegue
-Hoy ambos servicios siguen la rama `feat/web`. Cuando los PR se fusionen a `main`, cambiar la rama de origen de cada servicio a `main`
-(Railway → servicio → Settings → Source → Branch).
+Ambos servicios siguen la rama `main`: cada merge a `main` redespliega solo.
 
 ## Variables
 Todas están documentadas en `.env.example`. Se editan en Railway → servicio → Variables.
