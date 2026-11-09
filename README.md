@@ -2,7 +2,7 @@
 
 Migración del control tributario (NETVALLE vs SIAT vs SAP) de Google Colab a una aplicación web.
 
-**Estado:** `core/` y `api/` listos con pruebas. `web/` listo; despliegue en Railway pendiente. Ver `docs/HALLAZGOS.md`.
+**Estado:** `core/`, `api/` y `web/` listos y desplegados en Railway (ver `docs/DESPLIEGUE.md`). Pendiente: regresión con archivos reales. Ver `docs/HALLAZGOS.md`.
 
 | Carpeta | Contenido |
 |---|---|
@@ -43,3 +43,6 @@ Con `AUTH_ENABLED=true` (valor por defecto) hay que definir `AUTH_TOKEN` y envia
 cd web && npm install
 API_URL=http://localhost:8000 npm run dev      # con la API corriendo en el puerto 8000
 ```
+
+## Documentación
+`docs/HALLAZGOS.md` (decisiones sobre el código original) · `docs/REGLAS_NEGOCIO.md` · `docs/ARQUITECTURA.md` · `docs/DESPLIEGUE.md`.
