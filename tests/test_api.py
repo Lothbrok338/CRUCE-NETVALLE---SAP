@@ -150,7 +150,7 @@ def test_flujo_completo_estado_y_tarjetas(cliente, archivos_sinteticos):
         "FACTURAS PARA REVISAR", "AJUSTES SAP NEUTRALIZADOS", "LIBROS EXENTOS"]
     assert tarjetas[0]["resultado"] == "REVISAR" and tarjetas[1]["resultado"] == "TODO CUADRA"
     assert tarjetas[4]["resultado"] == "SIN EFECTO NETO"
-    assert est["resumen"]["observaciones_total"] == tarjetas[3]["cantidad"] == 11
+    assert est["resumen"]["observaciones_total"] == tarjetas[3]["cantidad"] == 12
 
 
 def test_job_con_error_de_negocio_informa_el_motivo(cliente, archivos_sinteticos, tmp_path):
@@ -213,8 +213,8 @@ def obs(cliente, jid, **p):
 def test_observaciones_paginacion(listo):
     c, jid = listo
     p1 = obs(c, jid, por_pagina=4, pagina=1)
-    assert p1["total"] == 11 and p1["paginas"] == 3 and len(p1["filas"]) == 4
-    assert len(obs(c, jid, por_pagina=4, pagina=3)["filas"]) == 3
+    assert p1["total"] == 12 and p1["paginas"] == 3 and len(p1["filas"]) == 4
+    assert len(obs(c, jid, por_pagina=4, pagina=3)["filas"]) == 4
     assert obs(c, jid, por_pagina=4, pagina=9)["filas"] == []
     assert "FACTURA" in p1["columnas"] and "QUÉ REVISAR" in p1["columnas"]
 
@@ -222,7 +222,7 @@ def test_observaciones_paginacion(listo):
 def test_observaciones_filtros_y_busqueda(listo):
     c, jid = listo
     assert obs(c, jid, control="SAP sin coincidencia")["total"] == 1
-    assert obs(c, jid, control="NETVALLE vs SAP")["total"] == 10
+    assert obs(c, jid, control="NETVALLE vs SAP")["total"] == 11
     assert obs(c, jid, punto="SFC103")["total"] == 4
     assert obs(c, jid, q="2003")["filas"][0]["FACTURA"] == "2003"
     assert obs(c, jid, q="2003".lower(), punto="SFC001")["total"] == 0
