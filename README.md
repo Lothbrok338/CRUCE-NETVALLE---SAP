@@ -2,7 +2,7 @@
 
 Migración del control tributario (NETVALLE vs SIAT vs SAP) de Google Colab a una aplicación web.
 
-**Estado:** Etapa 1 (preparación). Ver el plan de trabajo en `docs/`.
+**Estado:** Etapas 1–3 completas (`core/` + pruebas). `api/`, `web/` y despliegue pendientes. Ver `docs/HALLAZGOS.md`.
 
 | Carpeta | Contenido |
 |---|---|
@@ -14,3 +14,10 @@ Migración del control tributario (NETVALLE vs SIAT vs SAP) de Google Colab a un
 | `docs/` | HALLAZGOS, REGLAS_NEGOCIO, ARQUITECTURA, DESPLIEGUE |
 
 Instrucciones de ejecución local y despliegue: se completan en la Etapa 8.
+
+## Ejecutar pruebas
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements-dev.txt
+pytest
+```
