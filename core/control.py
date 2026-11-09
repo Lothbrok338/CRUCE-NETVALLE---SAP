@@ -597,7 +597,7 @@ def generar_control(netvalle_archivo, sap_archivos, archivo_salida=None):
                 else None
             )
 
-            motivo = "Misma referencia en SAP, pero los datos no coinciden"
+            motivo = " / ".join(sorted(c["motivos"])) + " (misma referencia en SAP con otros datos)"
 
             detalle = (
                 f"Factura NETVALLE de Bs {c['total']:,.2f}, "
@@ -607,12 +607,12 @@ def generar_control(netvalle_archivo, sap_archivos, archivo_salida=None):
             )
 
         else:
-            motivo = "No se encontró la contabilización esperada en SAP"
+            motivo = " / ".join(sorted(c["motivos"]))
 
             detalle = (
                 f"Factura NETVALLE de Bs {c['total']:,.2f}, "
-                f"fecha {fecha_net}, sin coincidencia exacta "
-                f"en los mayores tributarios SAP revisados."
+                f"fecha {fecha_net}. "
+                f"Revisar sus partidas en los mayores tributarios SAP."
             )
 
         obs_amigables.append({

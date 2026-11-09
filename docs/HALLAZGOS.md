@@ -12,6 +12,7 @@ original**: ningún hallazgo se corrigió. Las decisiones marcadas **PENDIENTE**
 | 5 | Dependencias de Colab | n/a | **Resuelto** |
 | 6 | Anuladas/incompletas "REVISAR" no se exportan | Incompletas SÍ a OBSERVACIONES; anuladas se ignoran siempre | **Resuelto** |
 | 7 | Encabezados sin color en el Excel | Corregir | **Resuelto** |
+| 8 | *(nuevo)* `QUÉ PASÓ` no refleja el motivo real | Poner el motivo real | **Resuelto** |
 
 Los detalles del análisis original siguen abajo. Las secciones 2, 3, 6 y 7 describen el comportamiento
 **original**; el código actual de `core/` ya refleja las decisiones de la tabla.
@@ -71,3 +72,13 @@ mantener paridad. **Verificar contra un Excel real del original;** si lo quieres
   Esto cambia el conteo de "FACTURAS PARA REVISAR" y el resultado general cuando hay incompletas.
 - Hallazgo 7: los encabezados se escriben con el color de cada hoja (azul 1F4E78, rojo C00000, celeste 5B9BD5), letra blanca.
 - `scripts/extraer_core.py` se eliminó: `core/` ya no es una copia exacta del original.
+
+## 8. `QUÉ PASÓ` en OBSERVACIONES no dice el motivo real (nuevo)
+En OBSERVACIONES, `QUÉ PASÓ` solo tiene dos textos para facturas de NETVALLE: "Misma referencia en SAP, pero los
+datos no coinciden" o "No se encontró la contabilización esperada en SAP". El motivo real calculado
+(`FALTA EN SAP IT`, `DUPLICADA EN SAP IT - REVISAR`, `DIFERENCIA IMPORTE IT`, `FACTURA VÁLIDA CON REVERSO IVA - REVISAR`…)
+se guarda en `caso["motivos"]` pero **nunca se escribe**. Efecto: una factura con IT duplicada o con diferencia de importe
+aparece como "No se encontró la contabilización esperada", aunque SAP sí la tiene (la hoja NETVALLE sí muestra el motivo exacto).
+**Propuesta:** agregar el motivo real al texto de `QUÉ PASÓ` (p. ej. "DUPLICADA EN SAP IT - REVISAR"). No se cambió.
+
+**Aplicado (hallazgo 8):** `QUÉ PASÓ` ahora lleva el resultado exacto (p. ej. `DUPLICADA EN SAP IT - REVISAR`); si hay varios, separados por ` / `.
