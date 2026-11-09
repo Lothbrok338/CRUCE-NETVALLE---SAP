@@ -1,0 +1,10 @@
+.git
+.venv
+**/__pycache__
+tests
+legacy
+docs
+web/node_modules
+web/.next
+*.xlsx
+.env

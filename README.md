@@ -2,7 +2,7 @@
 
 Migración del control tributario (NETVALLE vs SIAT vs SAP) de Google Colab a una aplicación web.
 
-**Estado:** Etapas 1–3 completas (`core/` + pruebas). `api/`, `web/` y despliegue pendientes. Ver `docs/HALLAZGOS.md`.
+**Estado:** `core/` y `api/` listos con pruebas. `web/` y despliegue en Railway pendientes. Ver `docs/HALLAZGOS.md`.
 
 | Carpeta | Contenido |
 |---|---|
@@ -21,3 +21,19 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
 pytest
 ```
+
+## Levantar la API
+```bash
+pip install -r requirements-api.txt
+AUTH_ENABLED=false uvicorn api.main:crear_app --factory --reload   # docs en http://localhost:8000/docs
+```
+Con `AUTH_ENABLED=true` (valor por defecto) hay que definir `AUTH_TOKEN` y enviar `Authorization: Bearer <token>`.
+
+| Endpoint | Función |
+|---|---|
+| `POST /api/clasificar` | Vista previa de la clasificación (NETVALLE/SAP) sin crear control |
+| `POST /api/controles` | Sube archivos, clasifica, valida y crea el job (acepta `netvalle` y `sap` para corregir) |
+| `GET /api/controles/{id}` | Estado (en cola, procesando, listo, error) y las 6 tarjetas |
+| `GET /api/controles/{id}/observaciones` | Tabla paginada: `pagina, por_pagina, q, control, punto, orden, direccion` |
+| `GET /api/controles/{id}/excel` | Descarga el Excel |
+| `GET /health` | Health check (Railway) |
