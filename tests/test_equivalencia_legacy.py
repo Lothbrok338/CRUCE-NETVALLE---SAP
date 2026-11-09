@@ -1,7 +1,7 @@
 """Equivalencia core/ vs código original de Colab (legacy/), con datos sintéticos.
 
 Diferencias deliberadas (decisiones del usuario, docs/HALLAZGOS.md): las facturas INCOMPLETAS ahora van a
-OBSERVACIONES (por eso este dataset no las incluye) y los encabezados del Excel ahora llevan color.
+OBSERVACIONES, y los errores de lectura SAP también (por eso este dataset no incluye ni unas ni otros) y los encabezados del Excel ahora llevan color.
 
 El original se ejecuta con módulos de Colab simulados y sin modificarse. Se comparan celda por celda
 las cuatro hojas y los formatos básicos del Excel generado por ambos.

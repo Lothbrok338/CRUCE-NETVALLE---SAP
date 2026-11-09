@@ -61,7 +61,7 @@ def it(punto, factura, clave, importe, asiento):
     return _sap(CUENTA_IT, punto, factura, clave, importe, asiento)
 
 
-def filas_sap():
+def filas_sap(incluir_errores=True):
     n, s = NORMAL, SOUVENIR
     f = []
     f += [iva(n, 1001, "50", -13.0, "A1001")]
@@ -90,7 +90,8 @@ def filas_sap():
     # SAP sin NETVALLE (alerta real)
     f += [iva(n, 9002, "50", -13.0, "A9002")]
     # fila no interpretable (sin número de factura)
-    f += [_sap(CUENTA_IVA, n, 0, "50", -5.0, "A9999", texto="SIN REFERENCIA DE FACTURA")]
+    if incluir_errores:
+        f += [_sap(CUENTA_IVA, n, 0, "50", -5.0, "A9999", texto="SIN REFERENCIA DE FACTURA")]
     # otra cuenta: se ignora
     f += [_sap("999999999", n, 7777, "50", -1.0, "X1")]
     return f
@@ -122,5 +123,5 @@ def crear_archivos(directorio: Path, incluir_incompletas: bool = True):
         siat.to_excel(w, sheet_name="SIAT", index=False)
 
     ruta_sap = directorio / "SAP.xlsx"
-    pd.DataFrame(filas_sap()).to_excel(ruta_sap, sheet_name="Hoja1", index=False)
+    pd.DataFrame(filas_sap(incluir_errores=incluir_incompletas)).to_excel(ruta_sap, sheet_name="Hoja1", index=False)
     return str(ruta_cruce), str(ruta_sap)
