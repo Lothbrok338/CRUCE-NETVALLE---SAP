@@ -98,8 +98,11 @@ def test_h7_encabezados_con_color_por_hoja(archivos_sinteticos, tmp_path):
             assert celda.fill.fgColor.rgb.endswith(color) and celda.font.b and celda.font.color.rgb.endswith("FFFFFF")
 
 
-def test_h8_que_paso_no_refleja_el_motivo_real(res):
+def test_h8_que_paso_muestra_el_motivo_real(res):
+    """Decisión: QUÉ PASÓ lleva el resultado exacto calculado (texto de contrato)."""
     obs = res.observaciones.set_index("FACTURA")
-    # 2003 = IT duplicada, 2005 = diferencia de IT: ambas dicen "No se encontró..." aunque SAP sí tiene partidas
-    for factura in ("2003", "2005"):
-        assert obs.loc[factura, "QUÉ PASÓ"] == "No se encontró la contabilización esperada en SAP"
+    assert obs.loc["2003", "QUÉ PASÓ"] == "DUPLICADA EN SAP IT - REVISAR"
+    assert obs.loc["2005", "QUÉ PASÓ"] == "DIFERENCIA IMPORTE IT"
+    assert obs.loc["1002", "QUÉ PASÓ"] == "FALTA EN SAP IVA"
+    assert obs.loc["1004", "QUÉ PASÓ"] == "FACTURA VÁLIDA CON REVERSO IVA - REVISAR"
+    assert obs.loc["1005", "QUÉ PASÓ"] == "DIFERENCIA IMPORTE IVA"

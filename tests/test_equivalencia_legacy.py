@@ -1,7 +1,7 @@
 """Equivalencia core/ vs código original de Colab (legacy/), con datos sintéticos.
 
 Diferencias deliberadas (decisiones del usuario, docs/HALLAZGOS.md): las facturas INCOMPLETAS ahora van a
-OBSERVACIONES, y los errores de lectura SAP también (por eso este dataset no incluye ni unas ni otros) y los encabezados del Excel ahora llevan color.
+OBSERVACIONES, y los errores de lectura SAP también (por eso este dataset no incluye ni unas ni otros) los encabezados del Excel ahora llevan color y QUÉ PASÓ muestra el motivo real.
 
 El original se ejecuta con módulos de Colab simulados y sin modificarse. Se comparan celda por celda
 las cuatro hojas y los formatos básicos del Excel generado por ambos.
@@ -35,6 +35,8 @@ def test_hoja_identica_celda_por_celda(excels, hoja):
     a = pd.read_excel(excels[0], sheet_name=hoja, dtype=object, keep_default_na=False)
     b = pd.read_excel(excels[1], sheet_name=hoja, dtype=object, keep_default_na=False)
     assert list(a.columns) == list(b.columns)
+    if hoja == "OBSERVACIONES":  # diferencia deliberada (hallazgo 8): QUÉ PASÓ / QUÉ REVISAR llevan el motivo real
+        a, b = a.drop(columns=["QUÉ PASÓ", "QUÉ REVISAR"]), b.drop(columns=["QUÉ PASÓ", "QUÉ REVISAR"])
     pd.testing.assert_frame_equal(a, b, check_dtype=False)
 
 
