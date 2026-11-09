@@ -5,7 +5,7 @@ original**: ningún hallazgo se corrigió. Las decisiones marcadas **PENDIENTE**
 
 | # | Hallazgo | Decisión del usuario | Estado |
 |---|---|---|---|
-| 1 | Filas con error de lectura SAP no llegan a OBSERVACIONES | Pidió explicación de qué son | **PENDIENTE** |
+| 1 | Filas con error de lectura SAP no llegan a OBSERVACIONES | Probar incluirlas (CONTROL = "SAP error de lectura"); revertir si no convence | **En prueba** |
 | 2 | Dos cálculos de "SAP sin NETVALLE" | Si la factura está anulada en NETVALLE y también en SAP, no se observa | **Resuelto**: se conserva el criterio exportado; se eliminó el duplicado |
 | 3 | Código calculado y no exportado | "Lo más lógico" | **Resuelto**: eliminado (`resumen`, `determinar_dictamen`, `observaciones`, `construir_sap_sin_netvalle`) |
 | 4 | Escapes en regex | OK | **Sin cambio** |

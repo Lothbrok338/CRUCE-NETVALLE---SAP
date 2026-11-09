@@ -695,6 +695,41 @@ def generar_control(netvalle_archivo, sap_archivos, archivo_salida=None):
             ),
         })
 
+    # ------------------------------------------------------------
+    # ERRORES DE LECTURA SAP (decisión del usuario, a prueba): filas del mayor que no se pudieron
+    # interpretar. Antes solo se veían en la hoja SAP; ahora también se listan aquí.
+    # ------------------------------------------------------------
+    for movimientos in (iva, it):
+        for _, e in movimientos[movimientos["_ERROR"] != ""].iterrows():
+            fecha_e = (
+                pd.to_datetime(e["_FECHA"]).strftime("%d/%m/%Y")
+                if pd.notna(e["_FECHA"])
+                else ""
+            )
+            importe_e = (
+                abs(float(e["_IMPORTE"])) if pd.notna(e["_IMPORTE"]) else float("nan")
+            )
+
+            obs_amigables.append({
+                "CONTROL": "SAP error de lectura",
+                "FACTURA": str(e["_FACTURA"]) if pd.notna(e["_FACTURA"]) else "",
+                "PUNTO": e["_PUNTO"],
+                "FECHA NETVALLE": "",
+                "TOTAL FACTURA NETVALLE Bs": float("nan"),
+                "QUÉ PASÓ": "Fila SAP que no se pudo interpretar y quedó fuera del cruce",
+                "ASIENTO SAP": e["_ASIENTO"],
+                "FECHA SAP": fecha_e,
+                "IVA ESPERADO Bs": float("nan"),
+                "IVA SAP Bs": importe_e if e["_TIPO"] == "IVA" else float("nan"),
+                "IT ESPERADO Bs": float("nan"),
+                "IT SAP Bs": importe_e if e["_TIPO"] == "IT" else float("nan"),
+                "QUÉ REVISAR": (
+                    f"Motivo: {e['_ERROR']}. "
+                    "Revisar la fila en el mayor SAP (cuenta "
+                    f"{'IVA' if e['_TIPO'] == 'IVA' else 'IT'}) y corregir el dato o el asiento."
+                ),
+            })
+
     observaciones_amigables = pd.DataFrame(
         obs_amigables,
         columns=[

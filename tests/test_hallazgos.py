@@ -21,14 +21,14 @@ def res(archivos_sinteticos):
     return generar_control(cruce, [sap])
 
 
-def test_h1_filas_con_error_no_llegan_a_observaciones(res):
-    errores = res.sap[res.sap["ERROR DE LECTURA"].astype(str) != ""]
-    assert len(errores) == 1 and errores.iloc[0]["Asiento contable"] == "A9999"
-    # se calculan y cuentan en el diagnóstico...
-    assert len(res.diagnostico["errores_sap"]) >= 1
-    # ...aparecen solo en la hoja SAP, NO en OBSERVACIONES ni en las tarjetas
-    assert "A9999" not in " ".join(res.observaciones["ASIENTO SAP"].astype(str))
-    assert "ERROR" not in " ".join(res.ejecutivo["QUÉ SIGNIFICA"].astype(str)).upper()
+def test_h1_errores_de_lectura_van_a_observaciones(res):
+    """Prueba a evaluar por el usuario: si no convence, se revierte este bloque."""
+    obs = res.observaciones
+    fila = obs[obs["CONTROL"] == "SAP error de lectura"].iloc[0]
+    assert fila["ASIENTO SAP"] == "A9999"
+    assert fila["QUÉ PASÓ"] == "Fila SAP que no se pudo interpretar y quedó fuera del cruce"
+    assert "FACTURA NO INTERPRETABLE" in fila["QUÉ REVISAR"] and "cuenta IVA" in fila["QUÉ REVISAR"]
+    assert (obs["CONTROL"] == "SAP error de lectura").sum() == 1
 
 
 def test_h2_sap_con_factura_anulada_en_netvalle_no_se_observa(res):
@@ -85,7 +85,7 @@ def test_h6_incompletas_van_a_observaciones_y_anuladas_se_ignoran(res):
     assert "incompleto" in fila["QUÉ REVISAR"]
     # anuladas con REVISAR (3003, 3004, 3005, 3006, 3008): nunca se observan
     assert not ({"3003", "3004", "3005", "3006", "3008"} & set(obs["FACTURA"]))
-    assert len(obs) == 12 and res.pendientes_sap == 12
+    assert len(obs) == 13 and res.pendientes_sap == 13
 
 
 def test_h7_encabezados_con_color_por_hoja(archivos_sinteticos, tmp_path):
