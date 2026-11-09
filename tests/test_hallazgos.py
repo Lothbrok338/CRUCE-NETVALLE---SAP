@@ -31,17 +31,17 @@ def test_h1_filas_con_error_no_llegan_a_observaciones(res):
     assert "ERROR" not in " ".join(res.ejecutivo["QUÉ SIGNIFICA"].astype(str)).upper()
 
 
-def test_h2_dos_calculos_de_sap_sin_netvalle_no_son_equivalentes(res):
-    """construir_sap_sin_netvalle (solo dictamen) != sap_sin_justificar (el que se exporta)."""
-    primero = set(res.diagnostico["sap_sin_netvalle"]["NÚMERO DE FACTURA"].astype(int))
-    segundo = {int(f) for f in res.observaciones.loc[res.observaciones["CONTROL"].eq("SAP sin coincidencia"), "FACTURA"]}
-    assert segundo == {9002}
-    assert primero == {6001, 9002}           # 6001: anulada en NETVALLE, SAP la registró con otra fecha
-    assert primero != segundo                # => NO se puede unificar sin decisión de negocio
+def test_h2_sap_con_factura_anulada_en_netvalle_no_se_observa(res):
+    """Decisión: si la factura (punto+número) está anulada en NETVALLE y también aparece en SAP, no se observa."""
+    sin_coincidencia = {int(f) for f in res.observaciones.loc[res.observaciones["CONTROL"].eq("SAP sin coincidencia"), "FACTURA"]}
+    assert sin_coincidencia == {9002}          # 6001 (anulada en NETVALLE, SAP con otra fecha) NO se observa
+    assert "6001" not in set(res.observaciones["FACTURA"])
 
 
-def test_h3_salidas_calculadas_pero_no_exportadas(res, archivos_sinteticos, tmp_path):
-    assert {"resumen", "dictamen", "observaciones_originales"} <= set(res.diagnostico)
+def test_h3_codigo_muerto_eliminado(res, archivos_sinteticos, tmp_path):
+    import core.control, core.sap
+    assert not hasattr(core.control, "determinar_dictamen") and not hasattr(core.sap, "construir_sap_sin_netvalle")
+    assert set(res.diagnostico) == {"errores_sap"}
     ruta = tmp_path / "x.xlsx"
     generar_control(archivos_sinteticos[0], [archivos_sinteticos[1]], archivo_salida=str(ruta))
     assert load_workbook(ruta).sheetnames == ["RESUMEN_EJECUTIVO", "OBSERVACIONES", "NETVALLE", "SAP"]
@@ -77,15 +77,22 @@ def test_h5_core_sin_dependencias_de_colab_ni_web():
         assert "!pip" not in archivo.read_text(encoding="utf-8")
 
 
-def test_h6_anuladas_e_incompletas_con_revisar_no_llegan_a_observaciones(res):
-    net = res.netvalle
-    pendientes = net[net["RESULTADO CONTROL"].str.contains("REVISAR") & net["ESTADO"].isin(["A", "I"])]
-    assert set(pendientes["Nº DE FACTURA"].astype(int)) == {3003, 3004, 3005, 3006, 3008, 4001}
-    assert not (set(pendientes["Nº DE FACTURA"].astype(int).astype(str)) & set(res.observaciones["FACTURA"]))
+def test_h6_incompletas_van_a_observaciones_y_anuladas_se_ignoran(res):
+    obs = res.observaciones
+    # incompleta (4001): observada con motivo propio
+    fila = obs[obs["FACTURA"] == "4001"].iloc[0]
+    assert fila["QUÉ PASÓ"] == "Factura INCOMPLETA en NETVALLE"
+    assert "incompleto" in fila["QUÉ REVISAR"]
+    # anuladas con REVISAR (3003, 3004, 3005, 3006, 3008): nunca se observan
+    assert not ({"3003", "3004", "3005", "3006", "3008"} & set(obs["FACTURA"]))
+    assert len(obs) == 12 and res.pendientes_sap == 12
 
 
-def test_h7_encabezados_sin_relleno_en_celdas_con_datos(archivos_sinteticos, tmp_path):
+def test_h7_encabezados_con_color_por_hoja(archivos_sinteticos, tmp_path):
     ruta = tmp_path / "x.xlsx"
     generar_control(archivos_sinteticos[0], [archivos_sinteticos[1]], archivo_salida=str(ruta))
-    ws = load_workbook(ruta)["OBSERVACIONES"]
-    assert ws["A1"].fill.patternType is None   # el color de encabezado no se aplica sobre los datos
+    wb = load_workbook(ruta)
+    esperado = {"RESUMEN_EJECUTIVO": "1F4E78", "OBSERVACIONES": "C00000", "NETVALLE": "1F4E78", "SAP": "5B9BD5"}
+    for hoja, color in esperado.items():
+        for celda in wb[hoja][1]:
+            assert celda.fill.fgColor.rgb.endswith(color) and celda.font.b and celda.font.color.rgb.endswith("FFFFFF")

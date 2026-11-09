@@ -32,6 +32,11 @@ def formatear_hoja(ws, wb, dataframe, color):
 
     ws.set_row(0, 42, encabezado)
 
+    # CAMBIO vs original (hallazgo 7): pandas escribe los encabezados con su propio formato, que anulaba el
+    # color de la fila. Se reescriben con el formato de color para que el encabezado realmente se vea.
+    for indice, columna in enumerate(dataframe.columns):
+        ws.write(0, indice, str(columna), encabezado)
+
     if len(dataframe.columns):
 
         ws.autofilter(0, 0, len(dataframe), len(dataframe.columns) - 1)

@@ -3,9 +3,8 @@
 `core/` (pandas puro) → `api/` (FastAPI) → `web/` (Next.js). `legacy/` es solo referencia.
 
 ## Trazabilidad core ↔ original
-Los nombres de función son idénticos a `legacy/control_tributario_colab.py`. `scripts/extraer_core.py`
-regenera `core/` desde el original (copia por AST); solo se normalizaron líneas en blanco y se reemplazaron
-`print`/`display`/escritura de Excel.
+Los nombres de función son idénticos a `legacy/control_tributario_colab.py`. `core/` se extrajo del original
+sin cambiar lógica; después se aplicaron solo las decisiones listadas en `docs/HALLAZGOS.md`.
 
 | Módulo | Funciones |
 |---|---|
@@ -15,8 +14,8 @@ regenera `core/` desde el original (copia por AST); solo se normalizaron líneas
 | `llaves.py` | construir_llaves, extraer_factura_sap |
 | `clasificacion.py` | hojas_archivo, contiene_base_netvalle, cuentas_en_archivo, clasificar_archivos |
 | `netvalle.py` | leer_netvalle, preparar_netvalle |
-| `sap.py` | leer_sap, separar_cuentas_sap, preparar_sap, vincular_reversos_manuales, resumir_sap, agregar_datos_sap, grupo_sap_neutralizado, construir_sap_sin_netvalle, construir_errores_sap, exportar_sap_legible |
-| `control.py` | evaluar_fila, construir_exportacion_netvalle, determinar_dictamen, generar_control, `ResultadoControl` |
+| `sap.py` | leer_sap, separar_cuentas_sap, preparar_sap, vincular_reversos_manuales, resumir_sap, agregar_datos_sap, grupo_sap_neutralizado, construir_errores_sap, exportar_sap_legible |
+| `control.py` | evaluar_fila, construir_exportacion_netvalle, generar_control, `ResultadoControl` |
 | `excel.py` | formatear_hoja, escribir_excel |
 
 Diferencias deliberadas: `generar_control(netvalle, sap, archivo_salida=None)` devuelve `ResultadoControl`

@@ -4,7 +4,6 @@ import logging
 from dataclasses import dataclass, field
 from time import perf_counter
 
-import numpy as np
 import pandas as pd
 
 from core.clasificacion import hojas_archivo
@@ -12,7 +11,7 @@ from core.constantes import AZUL, CELESTE, ROJO, TOLERANCIA
 from core.excel import escribir_excel
 from core.netvalle import leer_netvalle, preparar_netvalle
 from core.sap import (
-    agregar_datos_sap, construir_errores_sap, construir_sap_sin_netvalle,
+    agregar_datos_sap, construir_errores_sap,
     exportar_sap_legible, grupo_sap_neutralizado, leer_sap, preparar_sap,
     resumir_sap, separar_cuentas_sap, vincular_reversos_manuales,
 )
@@ -191,95 +190,6 @@ def construir_exportacion_netvalle(netvalle):
     return pd.concat([control.reset_index(drop=True), originales], axis=1)
 
 
-def determinar_dictamen(pendientes_netvalle, sap_sin_netvalle, errores_sap,
-
-                        reversos_manuales, libros_exentos):
-
-    """Emite una conclusión conservadora sin reutilizar importes del SIAT."""
-
-    pendientes = int(pendientes_netvalle) + int(sap_sin_netvalle) + int(errores_sap)
-
-    if pendientes:
-
-        return {
-
-            "nivel": "REVISAR",
-
-            "texto": "🔴 REVISAR ANTES DE DECLARAR",
-
-            "pendientes": pendientes,
-
-            "explicacion": (
-
-                "Existen diferencias no justificadas entre NETVALLE y las partidas "
-
-                "tributarias de SAP."
-
-            ),
-
-            "accion": "Revisar SAP_SIN_NETVALLE y OBSERVACIONES antes de confirmar la declaración.",
-
-        }
-
-    if reversos_manuales:
-
-        return {
-
-            "nivel": "AJUSTES",
-
-            "texto": "🟡 APTO CON AJUSTES IDENTIFICADOS",
-
-            "pendientes": 0,
-
-            "explicacion": (
-
-                "No quedan diferencias pendientes; existen reversiones manuales "
-
-                "vinculadas de manera única y verificable."
-
-            ),
-
-            "accion": "Conservar el respaldo de las reversiones manuales junto con el control.",
-
-        }
-
-    if libros_exentos:
-
-        return {
-
-            "nivel": "APTO",
-
-            "texto": "🟢 APTO PARA DECLARAR",
-
-            "pendientes": 0,
-
-            "explicacion": (
-
-                "La carga tributaria coincide. Las únicas exclusiones corresponden "
-
-                "a libros válidos exentos de IVA e IT."
-
-            ),
-
-            "accion": "Sin diferencias tributarias pendientes; conservar el archivo como respaldo.",
-
-        }
-
-    return {
-
-        "nivel": "APTO",
-
-        "texto": "🟢 APTO PARA DECLARAR",
-
-        "pendientes": 0,
-
-        "explicacion": "NETVALLE y las partidas tributarias de SAP coinciden sin diferencias pendientes.",
-
-        "accion": "Conservar el archivo como respaldo del control.",
-
-    }
-
-
 def generar_control(netvalle_archivo, sap_archivos, archivo_salida=None):
 
     inicio = perf_counter()
@@ -349,34 +259,6 @@ def generar_control(netvalle_archivo, sap_archivos, archivo_salida=None):
 
     exentas = validas & net["_EXENTO"]
 
-    gravadas = validas & ~net["_EXENTO"]
-
-    souvenirs = validas & net["_SOUVENIR"]
-
-    falta_iva_mask = gravadas & net["_IVA_CANT_ORIGINAL"].eq(0)
-
-    falta_it_mask = souvenirs & net["_IT_CANT_ORIGINAL"].eq(0)
-
-    dif_iva_mask = (
-
-        gravadas & net["_IVA_CANT_ORIGINAL"].gt(0)
-
-        & net["_DIF_IVA"].abs().gt(TOLERANCIA)
-
-    )
-
-    dif_it_mask = (
-
-        souvenirs & net["_IT_CANT_ORIGINAL"].gt(0)
-
-        & net["_DIF_IT"].abs().gt(TOLERANCIA)
-
-    )
-
-    diferencia_mask = dif_iva_mask | dif_it_mask
-
-    anuladas_mask = net["_ESTADO"].eq("A")
-
     incompletas_mask = ~net["_ESTADO"].isin(["V", "A"])
 
     resultados_sin_observacion = {
@@ -393,149 +275,7 @@ def generar_control(netvalle_archivo, sap_archivos, archivo_salida=None):
 
     llaves_net = set(net.loc[net["_LLAVE"] != "", "_LLAVE"])
 
-    sap_sin_net = construir_sap_sin_netvalle(iva, it, llaves_net)
-
     errores_sap = construir_errores_sap(iva, it, resumen_iva, resumen_it)
-
-    def corte(mascara):
-
-        return exportar.loc[mascara.to_numpy()].reset_index(drop=True)
-
-    observaciones_net = corte(observaciones_mask)
-
-    observaciones_net.insert(0, "ORIGEN OBSERVACIÓN", "NETVALLE")
-
-    observaciones_sap = errores_sap.copy()
-
-    if not observaciones_sap.empty:
-
-        observaciones_sap.insert(0, "ORIGEN OBSERVACIÓN", "SAP")
-
-        observaciones_sap["RESULTADO CONTROL"] = observaciones_sap["TIPO ERROR"]
-
-        observaciones = pd.concat(
-
-            [observaciones_net, observaciones_sap], ignore_index=True, sort=False
-
-        )
-
-    else:
-
-        observaciones = observaciones_net
-
-    anuladas_ok = int(net.loc[anuladas_mask, "_RESULTADO"].eq("ANULADA Y REVERTIDA CORRECTAMENTE").sum())
-
-    iva_correcto_mask = (
-
-        gravadas & net["_IVA_CANT_ORIGINAL"].eq(1)
-
-        & net["_IVA_CANT_REVERSO"].eq(0)
-
-        & net["_DIF_IVA"].abs().le(TOLERANCIA)
-
-    )
-
-    iva_correcto = int(iva_correcto_mask.sum())
-
-    it_souvenir_correcto = int((souvenirs & net["_IT_CANT_ORIGINAL"].eq(1) & net["_IT_CANT_REVERSO"].eq(0) & net["_DIF_IT"].abs().le(TOLERANCIA)).sum())
-
-    llaves_reversos_manuales = set()
-
-    for movimientos in (iva, it):
-
-        manuales = movimientos[
-
-            movimientos["_METODO_VINCULO"].eq(
-
-                "REVERSO MANUAL VINCULADO POR FACTURA + FECHA + IMPORTE"
-
-            )
-
-        ]
-
-        llaves_reversos_manuales.update(manuales["_LLAVE"].dropna())
-
-    dictamen = determinar_dictamen(
-
-        pendientes_netvalle=int(observaciones_mask.sum()),
-
-        sap_sin_netvalle=len(sap_sin_net),
-
-        errores_sap=len(errores_sap),
-
-        reversos_manuales=len(llaves_reversos_manuales),
-
-        libros_exentos=int(exentas.sum()),
-
-    )
-
-    resumen = pd.DataFrame([
-
-        (dictamen["texto"], dictamen["pendientes"], np.nan,
-
-         dictamen["explicacion"], dictamen["accion"]),
-
-        ("REGISTROS NETVALLE", len(net), np.nan,
-
-         "Universo total recibido desde el primer cruce.", "Dato informativo."),
-
-        ("CARGADAS CORRECTAMENTE EN SAP", iva_correcto, float(net.loc[iva_correcto_mask, "_IVA_MONTO"].sum()),
-
-         "Ventas gravadas con una partida IVA y sin diferencia de importe.", "No requieren revisión."),
-
-        ("LIBROS EXENTOS IVA E IT", int(exentas.sum()), float(net.loc[exentas, "_TOTAL"].sum()),
-
-         "Ventas sin débito fiscal, excluidas del control tributario SAP.", "No requieren IVA ni IT."),
-
-        ("SOUVENIRS IVA E IT CORRECTOS", it_souvenir_correcto, float(net.loc[souvenirs, "_TOTAL"].sum()),
-
-         "Souvenirs encontrados correctamente en ambas cuentas SAP.", "No requieren revisión."),
-
-        ("FALTAN EN SAP IVA", int(falta_iva_mask.sum()), float(net.loc[falta_iva_mask, "_IVA_ESPERADO"].sum()),
-
-         "Ventas gravadas que no tienen partida original de IVA.", "Revisar la pestaña OBSERVACIONES."),
-
-        ("FALTAN EN SAP IT - SOUVENIRS", int(falta_it_mask.sum()), float(net.loc[falta_it_mask, "_IT_ESPERADO"].sum()),
-
-         "Souvenirs que no tienen partida original de IT.", "Revisar la pestaña OBSERVACIONES."),
-
-        ("FACTURAS CON DIFERENCIA DE IMPORTE", int(diferencia_mask.sum()),
-
-         float(net.loc[diferencia_mask, ["_DIF_IVA", "_DIF_IT"]].fillna(0).abs().sum().sum()),
-
-         "El impuesto SAP difiere del porcentaje esperado por más de Bs 0,01.",
-
-         "Revisar importes en OBSERVACIONES."),
-
-        ("ANULADAS", int(anuladas_mask.sum()), np.nan,
-
-         "Facturas anuladas informadas por NETVALLE.",
-
-         f"{anuladas_ok} tienen reversión tributaria correcta."),
-
-        ("INCOMPLETAS / ESTADO A REVISAR", int(incompletas_mask.sum()), np.nan,
-
-         "Registros cuyo estado no es válido ni anulado.", "Revisar en OBSERVACIONES."),
-
-        ("REVERSOS MANUALES VINCULADOS", len(llaves_reversos_manuales), np.nan,
-
-         "Reversiones cuyo usuario SAP era distinto al punto de emisión, vinculadas de forma única.",
-
-         "Ya están incorporadas al resultado de cada factura."),
-
-        ("FACTURAS SAP SIN NETVALLE", len(sap_sin_net), np.nan,
-
-         "Facturas presentes en SAP que no tienen una llave equivalente en NETVALLE.",
-
-         "Revisar primero la pestaña SAP_SIN_NETVALLE."),
-
-        ("ERRORES O DUPLICADOS SAP", len(errores_sap), np.nan,
-
-         "Filas no interpretables o más de una partida original/reversa por llave.",
-
-         "Revisar en OBSERVACIONES."),
-
-    ], columns=["CONTROL", "CANTIDAD", "IMPORTE Bs", "QUÉ SIGNIFICA", "QUÉ HACER"])
 
     sap_exportado = pd.concat(
 
@@ -666,7 +406,7 @@ def generar_control(netvalle_archivo, sap_archivos, archivo_salida=None):
     # CASOS NETVALLE QUE REQUIEREN INVESTIGACIÓN
     # Se agrupan IVA e IT para no contar la misma factura dos veces.
     # ------------------------------------------------------------
-    observables = net.loc[validas & observaciones_mask].copy()
+    observables = net.loc[(validas | incompletas_mask) & observaciones_mask].copy()
 
     casos = {}
 
@@ -684,6 +424,7 @@ def generar_control(netvalle_archivo, sap_archivos, archivo_salida=None):
                 "fecha": n["_FECHA"],
                 "total": float(n["_TOTAL"]),
                 "motivos": set(),
+                "incompleta": False,
                 "sap": [],
                 "iva": (
                     float(n["_IVA_ESPERADO"])
@@ -699,6 +440,9 @@ def generar_control(netvalle_archivo, sap_archivos, archivo_salida=None):
         )
 
         caso["motivos"].add(str(n["_RESULTADO"]))
+
+        if n["_ESTADO"] != "V":
+            caso["incompleta"] = True
 
     # ------------------------------------------------------------
     # REFERENCIAS SAP SIN LLAVE EXACTA NETVALLE
@@ -819,7 +563,16 @@ def generar_control(netvalle_archivo, sap_archivos, archivo_salida=None):
         iva_sap = None
         it_sap = None
 
-        if c["sap"]:
+        if c["incompleta"]:
+            motivo = "Factura INCOMPLETA en NETVALLE"
+
+            detalle = (
+                f"Factura NETVALLE de Bs {c['total']:,.2f}, "
+                f"fecha {fecha_net}, con estado incompleto o no reconocido. "
+                f"Completar o regularizar el registro en NETVALLE."
+            )
+
+        elif c["sap"]:
             montos_iva = [
                 abs(float(f["_IMPORTE"]))
                 for f in c["sap"]
@@ -1168,13 +921,8 @@ def generar_control(netvalle_archivo, sap_archivos, archivo_salida=None):
         sap=sap_exportado,
         pendientes_sap=pendientes_sap,
         # Salidas calculadas por el original que NO se escriben en el Excel (hallazgo 3).
-        diagnostico={
-            "resumen": resumen,
-            "dictamen": dictamen,
-            "observaciones_originales": observaciones,
-            "sap_sin_netvalle": sap_sin_net,
-            "errores_sap": errores_sap,
-        },
+        # Filas SAP no interpretables (hoja SAP, columna ERROR DE LECTURA); pendiente decidir si van a OBSERVACIONES.
+        diagnostico={"errores_sap": errores_sap},
     )
 
     if archivo_salida:
