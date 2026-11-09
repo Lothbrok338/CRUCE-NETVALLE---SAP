@@ -4,7 +4,6 @@ import inspect
 
 import pytest
 
-from core import control
 from core.control import evaluar_fila
 
 
@@ -80,13 +79,3 @@ def test_orden_de_evaluacion_iva_antes_que_it():
     # souvenir con IVA duplicado y sin IT: se reporta primero el IVA
     r = evaluar_fila(pd.Series(fila(_SOUVENIR=True, _IVA_CANT_ORIGINAL=2, _IT_CANT_ORIGINAL=0)))
     assert r == "DUPLICADA EN SAP IVA - REVISAR"
-
-
-def test_dictamen_cuatro_ramas():
-    d = control.determinar_dictamen
-    assert d(1, 0, 0, 0, 0)["nivel"] == "REVISAR"
-    assert d(0, 1, 0, 0, 0)["nivel"] == "REVISAR"
-    assert d(0, 0, 1, 0, 0)["nivel"] == "REVISAR"
-    assert d(0, 0, 0, 2, 5)["nivel"] == "AJUSTES"
-    assert d(0, 0, 0, 0, 5)["nivel"] == "APTO"
-    assert d(0, 0, 0, 0, 0)["texto"] == "🟢 APTO PARA DECLARAR"

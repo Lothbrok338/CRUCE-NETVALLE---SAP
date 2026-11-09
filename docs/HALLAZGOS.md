@@ -3,15 +3,25 @@
 Cada hallazgo se verificó con pruebas (`tests/test_hallazgos.py`). **`core/` conserva el comportamiento
 original**: ningún hallazgo se corrigió. Las decisiones marcadas **PENDIENTE** esperan confirmación del usuario.
 
-| # | Hallazgo | Estado | Decisión |
+| # | Hallazgo | Decisión del usuario | Estado |
 |---|---|---|---|
-| 1 | Filas con error de lectura SAP no llegan a OBSERVACIONES | Confirmado (matizado) | **PENDIENTE** |
-| 2 | Dos cálculos de "SAP sin NETVALLE" | Confirmado: NO equivalentes | **No unificar** (ver abajo) |
-| 3 | Código calculado y no exportado | Confirmado | **Conservado** hasta decisión |
-| 4 | Escapes sospechosos en regex | Efecto inofensivo | **Sin cambio** (propuesto) |
-| 5 | Dependencias de Colab | Resuelto | Eliminadas de `core/` |
-| 6 | *(nuevo)* Anuladas/incompletas "REVISAR" no se exportan | Confirmado | **PENDIENTE** |
-| 7 | *(nuevo)* El color de encabezado del Excel no se ve | Confirmado (pandas 2.3.3) | **PENDIENTE** |
+| 1 | Filas con error de lectura SAP no llegan a OBSERVACIONES | Pidió explicación de qué son | **PENDIENTE** |
+| 2 | Dos cálculos de "SAP sin NETVALLE" | Si la factura está anulada en NETVALLE y también en SAP, no se observa | **Resuelto**: se conserva el criterio exportado; se eliminó el duplicado |
+| 3 | Código calculado y no exportado | "Lo más lógico" | **Resuelto**: eliminado (`resumen`, `determinar_dictamen`, `observaciones`, `construir_sap_sin_netvalle`) |
+| 4 | Escapes en regex | OK | **Sin cambio** |
+| 5 | Dependencias de Colab | n/a | **Resuelto** |
+| 6 | Anuladas/incompletas "REVISAR" no se exportan | Incompletas SÍ a OBSERVACIONES; anuladas se ignoran siempre | **Resuelto** |
+| 7 | Encabezados sin color en el Excel | Corregir | **Resuelto** |
+
+Los detalles del análisis original siguen abajo. Las secciones 2, 3, 6 y 7 describen el comportamiento
+**original**; el código actual de `core/` ya refleja las decisiones de la tabla.
+
+## Qué son los "errores de lectura" (hallazgo 1)
+Filas del mayor SAP que el programa no puede interpretar. Se detectan en `preparar_sap` y se marcan con un texto:
+cuenta distinta a la esperada, punto de emisión vacío, texto sin número de factura (`Txt.pos.reg.diario` sin `F123`),
+fecha vacía, clave contable distinta de 40/50, importe vacío, o reverso manual ambiguo. Esas filas se excluyen del cruce,
+y hoy solo se ven en la hoja `SAP` (columna `ERROR DE LECTURA`). **Recomendación:** listarlas en OBSERVACIONES para que
+nadie las pase por alto. Pendiente de tu respuesta.
 
 ## 1. Filas con error de lectura SAP (`_ERROR != ""`)
 Matiz respecto a lo reportado: **sí se exportan**, pero solo en la hoja `SAP` (columna `ERROR DE LECTURA`).
@@ -53,3 +63,11 @@ Con los datos sintéticos: 6 facturas en esa situación. **Puede ocultar pendien
 encabezado con su propio formato, que anula el de la fila. Resultado: en las columnas con datos el encabezado
 va en negrita y **sin relleno** (en `OBSERVACIONES` solo se pinta el resto de la fila). Se replica igual para
 mantener paridad. **Verificar contra un Excel real del original;** si lo quieres coloreado, es un cambio visual menor.
+
+## Cambios aplicados respecto al original (por decisión del usuario)
+- Hallazgo 2/3: `core/` ya no contiene `construir_sap_sin_netvalle`, `determinar_dictamen` ni las tablas no exportadas.
+- Hallazgo 6: las facturas con estado incompleto o no reconocido entran a OBSERVACIONES con motivo
+  "Factura INCOMPLETA en NETVALLE" (texto nuevo; no existía en el original). Las anuladas nunca se observan.
+  Esto cambia el conteo de "FACTURAS PARA REVISAR" y el resultado general cuando hay incompletas.
+- Hallazgo 7: los encabezados se escriben con el color de cada hoja (azul 1F4E78, rojo C00000, celeste 5B9BD5), letra blanca.
+- `scripts/extraer_core.py` se eliminó: `core/` ya no es una copia exacta del original.

@@ -96,7 +96,7 @@ def filas_sap():
     return f
 
 
-def crear_archivos(directorio: Path):
+def crear_archivos(directorio: Path, incluir_incompletas: bool = True):
     """Crea CRUCE.xlsx (RESUMEN_CRUCE/NETVALLE/SIAT) y SAP.xlsx. Devuelve (ruta_cruce, ruta_sap)."""
     directorio = Path(directorio)
     net = pd.DataFrame(
@@ -106,6 +106,7 @@ def crear_archivos(directorio: Path):
                 "TOTAL FACTURA (A)": t, "DÉBITO FISCAL": d, "ESTADO": e,
             }
             for p, fa, e, t, d, _ in NETVALLE
+            if incluir_incompletas or e != "I"
         ]
     )
     resumen_cruce = pd.DataFrame(
